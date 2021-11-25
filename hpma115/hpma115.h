@@ -32,6 +32,9 @@ typedef struct {
  */
 class HPMA115 {
 public:
+    /*!
+     * \brief Commands error codes
+     */
     enum class ErrorType : uint8_t {
         /** Command successful */
         Ok = 0,
