@@ -6,7 +6,7 @@
 #include "PinNames.h"
 #include "mbed.h"
 
-#define POLLIN_TIMEOUT_MS (10)
+#define POLLIN_TIMEOUT_MS (50)
 #define BUFFER_SIZE (16)
 
 static void flush_rx(BufferedSerial *serial)
