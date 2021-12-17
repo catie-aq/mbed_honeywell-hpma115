@@ -69,9 +69,10 @@ public:
 
     /*! Constructor
      *
-     * \param serial Serial port to which the sensor is connected
+     * \param tx Serial port TX pin
+     * \param rx Serial port RX pin
      */
-    HPMA115(mbed::UnbufferedSerial *serial);
+    HPMA115(PinName tx, PinName rx);
 
     /*!
      * \brief Read sensor measurements
@@ -129,7 +130,7 @@ public:
     ErrorType read_adjust_coef(uint8_t *coef);
 
 private:
-    mbed::UnbufferedSerial *_serial;
+    mbed::BufferedSerial _serial;
 
     /*!
      * \brief Send a command

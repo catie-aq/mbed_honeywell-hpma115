@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "hpma115/hpma115.h"
+#include "PinNames.h"
 #include "mbed.h"
 
 #define POLLIN_TIMEOUT_MS (10)
 #define BUFFER_SIZE (16)
 
-static void flush_rx(UnbufferedSerial *serial)
+static void flush_rx(BufferedSerial *serial)
 {
     char dummy;
 
@@ -21,7 +22,7 @@ static SingletonPtr<PlatformMutex> _serial_mutex;
 
 namespace sixtron {
 
-HPMA115::HPMA115(mbed::UnbufferedSerial *serial): _serial(serial)
+HPMA115::HPMA115(PinName tx, PinName rx): _serial(tx, rx, 9600)
 {
 }
 
@@ -136,7 +137,7 @@ HPMA115::ErrorType HPMA115::send_command(Command cmd)
 {
     ErrorType err;
 
-    flush_rx(this->_serial);
+    flush_rx(&this->_serial);
 
     buf[0] = static_cast<char>(Header::Send);
     buf[1] = 1;
@@ -146,7 +147,7 @@ HPMA115::ErrorType HPMA115::send_command(Command cmd)
     buf[3] = 0;
     buf[3] = compute_checksum(buf);
 
-    if (_serial->write(buf, 4) != 4) {
+    if (_serial.write(buf, 4) != 4) {
         err = ErrorType::SerialError;
         goto send_cmd_end;
     }
@@ -173,7 +174,7 @@ HPMA115::ErrorType HPMA115::send_data(Command cmd, uint8_t data)
 {
     ErrorType err;
 
-    flush_rx(this->_serial);
+    flush_rx(&this->_serial);
 
     buf[0] = static_cast<char>(Header::Send);
     buf[1] = 2;
@@ -184,7 +185,7 @@ HPMA115::ErrorType HPMA115::send_data(Command cmd, uint8_t data)
     buf[4] = 0;
     buf[4] = compute_checksum(buf);
 
-    if (_serial->write(buf, 5) != 5) {
+    if (_serial.write(buf, 5) != 5) {
         err = ErrorType::SerialError;
         goto send_data_end;
     }
@@ -211,7 +212,7 @@ HPMA115::ErrorType HPMA115::read_data(Command cmd, uint8_t *len, uint8_t **data)
 {
     ErrorType err;
 
-    flush_rx(this->_serial);
+    flush_rx(&this->_serial);
 
     buf[0] = static_cast<char>(Header::Send);
     buf[1] = 1;
@@ -221,7 +222,7 @@ HPMA115::ErrorType HPMA115::read_data(Command cmd, uint8_t *len, uint8_t **data)
     buf[3] = 0;
     buf[3] = compute_checksum(buf);
 
-    if (_serial->write(buf, 4) != 4) {
+    if (_serial.write(buf, 4) != 4) {
         err = ErrorType::SerialError;
         goto read_data_end;
     }
@@ -253,6 +254,7 @@ HPMA115::ErrorType HPMA115::read_data(Command cmd, uint8_t *len, uint8_t **data)
     } else if (buf[0] == buf[1] && buf[0] == static_cast<char>(Header::Nack)) {
         err = ErrorType::SensorNack;
     } else {
+        read_timeout(buf + 2, 4);
         err = ErrorType::SerialError;
     }
 
@@ -268,7 +270,7 @@ HPMA115::ErrorType HPMA115::read_timeout(uint8_t *data, ssize_t len)
 {
     ErrorType err = ErrorType::Ok;
     struct pollfh sfh = {
-        .fh = this->_serial,
+        .fh = &this->_serial,
         .events = POLLIN,
     };
 
@@ -277,7 +279,7 @@ HPMA115::ErrorType HPMA115::read_timeout(uint8_t *data, ssize_t len)
             err = ErrorType::SerialTimeout;
             break;
         }
-        if (!this->_serial->read(data + i, 1)) {
+        if (!this->_serial.read(data + i, 1)) {
             err = ErrorType::SerialError;
             break;
         }
