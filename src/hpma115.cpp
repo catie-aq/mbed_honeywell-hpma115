@@ -254,7 +254,6 @@ HPMA115::ErrorType HPMA115::read_data(Command cmd, uint8_t *len, uint8_t **data)
     } else if (buf[0] == buf[1] && buf[0] == static_cast<char>(Header::Nack)) {
         err = ErrorType::SensorNack;
     } else {
-        read_timeout(buf + 2, 4);
         err = ErrorType::SerialError;
     }
 
