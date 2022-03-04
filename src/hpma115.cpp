@@ -17,7 +17,7 @@ static void flush_rx(BufferedSerial *serial)
         serial->read(&dummy, 1);
 }
 
-static uint8_t buf[8];
+static uint8_t buf[BUFFER_SIZE];
 static SingletonPtr<PlatformMutex> _serial_mutex;
 
 namespace sixtron {
